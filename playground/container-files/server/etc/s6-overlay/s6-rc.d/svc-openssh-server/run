@@ -1,0 +1,15 @@
+#!/usr/bin/with-contenv bash
+# shellcheck shell=bash
+
+# Here we modify the default user running sshd to root instead of linuxserver.io so that 
+# AuthorizedKeysCommandUser opksshuser works
+
+USER_NAME=${USER_NAME:-root} 
+
+for i in /config/ssh_host_keys/ssh_host_*_key; do
+    SSH_HOST_KEYS="${SSH_HOST_KEYS} -h ${i}"
+done
+
+exec 2>&1 \
+    s6-notifyoncheck -d -n 300 -w 1000 -c "nc -z localhost ${LISTEN_PORT:-2222}" \
+        s6-setuidgid "${USER_NAME}" /usr/sbin/sshd.pam -D -e -f /config/sshd/sshd_config ${SSH_HOST_KEYS}
